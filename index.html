@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIS Test Applikation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.wms/dist/leaflet.wms.min.js"></script>
+    <script src="https://unpkg.com/@maptiler/geocoding-control@latest/leaflet.umd.js"></script>
+    <link href="https://unpkg.com/@maptiler/geocoding-control@latest/style.css" rel="stylesheet"/>
+    <script src="./Daten/STRASSENACHSE.js"></script>
+</head>
+<body>
+    <header style="background-color: #f4f4f4; padding: 10px; text-align: left; font-size: 1.5em;">
+        GIS Test Applikation
+    </header>
+    <div id="map" style="width: 100%; height: 90vh;"></div>
+    <script>
+        // Initialisierung der Karte
+        const map = L.map('map').setView([46.9967, 8.6073], 13);
+
+        // Hintergrundkarten
+        const AV = L.tileLayer.wms('https://wfs.geodienste.ch/av_0/deu?', {
+            layers: 'daten',
+            format: 'image/png',
+            attribution: '© Geodienste',
+            minZoom: 16,
+            maxZoom: 22
+        }).addTo(map);
+
+        const Uebersichtswisstopo = L.tileLayer(
+            'https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+            {
+                attribution: 'Map data: &copy; <a href="https://www.swisstopo.admin.ch">Swisstopo</a>',
+                minZoom: 0,
+                maxZoom: 16
+            }
+        ).addTo(map);
+
+        // Maßstabsleiste
+        L.control.scale({
+            imperial: false,
+            metric: true
+        }).addTo(map);
+
+        // WMS-Layer
+        const wmsLayer = L.tileLayer.wms('https://wms.geo.admin.ch/', {
+            layers: 'ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill',
+            format: 'image/png',
+            transparent: true,
+            attribution: '© swisstopo'
+        }).addTo(map);
+
+        const Velorouten = L.tileLayer.wms('https://map.geo.sz.ch/mapserv_proxy?ogcserver=source%20for%20image%2Fpng&', {
+            layers: 'ch.sz.a045a.radrouten',
+            format: 'image/png',
+            transparent: true,
+            attribution: '© Amt für Geoinformation Kanton Schwyz'
+        });
+
+        // GeoJSON-Layer (Straßenachse)
+        const StrassenachseLayer = L.geoJSON(STRASSENACHSE, {
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(feature.properties.Strassenname);
+            }
+        });
+
+        // Layer Control
+        const overlayMaps = {
+            "Straßenachse": StrassenachseLayer,
+            "Velorouten": Velorouten
+        };
+
+        L.control.layers(null, overlayMaps, {
+            collapsed: true
+        }).addTo(map);
+
+        // Suchfunktion
+        const apiKey = 'fNEAjSxZNlKxV4HZo1UZ';
+        L.control.maptilerGeocoding({ 
+            apiKey: apiKey, 
+            placeholder: "Suche",
+            collapsed: true,
+            country: 'ch',
+            language: 'de'
+        }).addTo(map);
+    </script>
+</body>
+</html>
